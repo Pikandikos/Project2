@@ -54,3 +54,50 @@ def exact_search(query, dataset, N=1):
     nearest_distances = distances[nearest_indices]
 
     return nearest_indices, nearest_distances
+
+def search_single_query(query, model, dataset, inv_lists, T=5, N=1, R=None):
+    # Search for a single query using Neural LSH.
+    # Convert query to tensor for python functions
+    query_tensor = torch.as_tensor(query, dtype=torch.float32).unsqueeze(0)
+    
+    # Get model predictions
+    with torch.no_grad():
+        scores = model(query_tensor)
+        probabilities = torch.softmax(scores, dim=1)
+    
+    # Get top T bins
+    top_t_bins = torch.topk(probabilities[0], T, largest=True, sorted=True).indices
+    
+    # Collect candidate indices
+    top_t_bins_list = top_t_bins.cpu().tolist()
+    candidate_indices = []
+    for bin_idx in top_t_bins_list:
+        candidate_indices.extend(inv_lists.get(bin_idx, [])) #if bin empty return empty list
+    
+    candidate_indices = list(set(candidate_indices))  # Remove duplicates
+    
+    if not candidate_indices:
+        return [], [], []
+    
+    # Get candidate vectors
+    candidates = dataset[candidate_indices]
+    # Compute distances to candidates
+    candidate_distances = compute_distances(query, candidates)
+    
+    # Check if we got enough candidates
+    # Sort and get first N
+    N_actual = min(N, len(candidate_distances))
+    nearest_idx = np.argsort(candidate_distances)[:N_actual]
+    nearest_indices = [candidate_indices[i] for i in nearest_idx]
+    nearest_distances = candidate_distances[nearest_idx]
+    
+    # Get points within range
+    id_in_range = []
+    if R is not None and R > 0:
+        id_in_range = [
+            candidate_indices[i] 
+            for i, dist in enumerate(candidate_distances) 
+            if dist <= R
+        ]
+    
+    return nearest_indices, nearest_candidate_dist, id_in_range
