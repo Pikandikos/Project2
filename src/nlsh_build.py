@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse #parse command-line arguments
 import os
 import pickle #Python’s binary serialize/deserialize
 
@@ -8,14 +7,20 @@ from sklearn.neighbors import NearestNeighbors
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
-import kahip
+from kahipwrapper import kaHIP as kahip
 
 
 # ---------- Simple MLP (later parameterize layers/nodes) ----------
 class MLPClassifier(nn.Module):
     def __init__(self, d_in: int, m_out: int, hidden_nodes: int, num_layers: int):
         super().__init__()
-
+        """
+        d_in = dimensions input
+        m_out = number of partitions
+        hidden_nodes = width of each hidden layer 
+        num_layers = No. of layers (hidden + output)
+        super().init() = initializes the parent class (nn.Module).
+        """
         layers = []
         in_dim = d_in
         for _ in range(num_layers - 1):      # hidden layers
@@ -32,12 +37,12 @@ class MLPClassifier(nn.Module):
     
 
 # ---------- Step 1: build k-NN graph ----------
-def build_knn_graph(X: np.ndarray, k: int):
-    n, d = X.shape
+def build_knn_graph(dataset: np.ndarray, k: int):
+    n, d = dataset.shape
     nbrs = NearestNeighbors(n_neighbors=k + 1, algorithm="auto", metric="euclidean")
-    nbrs.fit(X)
+    nbrs.fit(dataset)
     # indices: (n, k+1) including self as first neighbor
-    distances, indices = nbrs.kneighbors(X)
+    distances, indices = nbrs.kneighbors(dataset)
 
     # remove self (index 0)
     indices = indices[:, 1:]   # (n, k)
@@ -47,6 +52,7 @@ def build_knn_graph(X: np.ndarray, k: int):
 # ---------- Step 2: symmetrize graph + weights ----------
 def build_weighted_edges(neighbors: np.ndarray):
     """
+    n = No. of Neighbours
     neighbors[i] = list of directed neighbors j
     Return undirected edges with weights 1 or 2:
       - 2 if mutual neighbors
@@ -55,7 +61,7 @@ def build_weighted_edges(neighbors: np.ndarray):
     n, k = neighbors.shape
     # store directed edges in a set for quick lookup
     directed = set()
-    for i in range(n):
+    for i in range(n): 
         for j in neighbors[i]:
             directed.add((i, int(j)))
 
@@ -106,17 +112,11 @@ def edges_to_csr(n: int, edge_dict):
 
 # ---------- Step 4: run KaHIP ----------
 def run_kahip(xadj, adjncy, adjcwgt, vwgt, m: int, imbalance: float, mode: int, seed: int):
+    n=len(xadj)-1 # number of vertices
     edgecut, blocks = kahip.kaffpa(
-        vwgt,
-        xadj,
-        adjcwgt,
-        adjncy,
-        m,
-        imbalance,
+        vwgt, xadj, adjcwgt, adjncy, m, imbalance,
         True,      # suppress_output
-        seed,
-        mode
-    )
+        seed,mode)
     return np.array(blocks, dtype=np.int32)
 
 
@@ -125,20 +125,20 @@ def train_mlp(X: np.ndarray, labels: np.ndarray,
               m: int, layers: int, nodes: int,
               epochs: int, batch_size: int, lr: float, seed: int):
 
-    torch.manual_seed(seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.manual_seed(seed) #equivelant of srand()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #will run computations on gpu
 
     n, d = X.shape
     X_tensor = torch.from_numpy(X.astype(np.float32))
     y_tensor = torch.from_numpy(labels.astype(np.int64))
-    dataset = TensorDataset(X_tensor, y_tensor)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    dataset = TensorDataset(X_tensor, y_tensor) #Breaks dataset into x,y tensors
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True) # Splits the dataset into mini-batches
 
-    model = MLPClassifier(d_in=d, m_out=m, hidden_nodes=nodes, num_layers=layers).to(device)
-    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    model = MLPClassifier(d_in=d, m_out=m, hidden_nodes=nodes, num_layers=layers).to(device) #Creates MLP
+    opt = torch.optim.Adam(model.parameters(), lr=lr) # Adam maintains adaptive learning rates for params
     loss_fn = nn.CrossEntropyLoss()
 
-    model.train()
+    model.train() #As of now, does not change behaviour
     for epoch in range(epochs):
         running_loss = 0.0
         for xb, yb in loader:
@@ -164,26 +164,3 @@ def build_inverted_lists(labels: np.ndarray, m: int):
     for i, r in enumerate(labels):
         inv_lists[int(r)].append(int(i))
     return inv_lists
-
-
-# ---------- CLI + main ----------
-def parse_args():
-    parser = argparse.ArgumentParser(description="Neural LSH index builder")
-
-    parser.add_argument("-d", required=True, help="input dataset file (binary .dat)")
-    parser.add_argument("-i", required=True, help="index path prefix (e.g., nlsh_index)")
-    parser.add_argument("-type", required=True, choices=["sift", "mnist"])
-
-    parser.add_argument("--knn", type=int, default=10)
-    parser.add_argument("-m", type=int, default=100)
-    parser.add_argument("--imbalance", type=float, default=0.03)
-    parser.add_argument("--kahip_mode", type=int, default=2)
-
-    parser.add_argument("--layers", type=int, default=3)
-    parser.add_argument("--nodes", type=int, default=64)
-    parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--batch_size", type=int, default=128)
-    parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--seed", type=int, default=1)
-
-    return parser.parse_args()

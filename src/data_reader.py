@@ -1,8 +1,29 @@
-import numpy as np
-
+import argparse
 import numpy as np
 import struct
 
+
+# ---------- CLI + main ----------
+def parse_args():
+    parser = argparse.ArgumentParser(description="Neural LSH index builder")
+
+    parser.add_argument("-d", required=True, help="input dataset file (binary .dat)")
+    parser.add_argument("-i", required=True, help="index path prefix (e.g., nlsh_index)")
+    parser.add_argument("-type", required=True, choices=["sift", "mnist"])
+
+    parser.add_argument("--knn", type=int, default=10)
+    parser.add_argument("-m", type=int, default=100)
+    parser.add_argument("--imbalance", type=float, default=0.03)
+    parser.add_argument("--kahip_mode", type=int, default=2)
+
+    parser.add_argument("--layers", type=int, default=3)
+    parser.add_argument("--nodes", type=int, default=64)
+    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--seed", type=int, default=1)
+
+    return parser.parse_args()
 
 # ---------- MNIST IMAGES (Python version of read_mnist_im) ----------
 def read_mnist_im(path: str) -> np.ndarray:

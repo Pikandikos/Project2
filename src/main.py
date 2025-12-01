@@ -6,12 +6,12 @@ def main():
     np.random.seed(args.seed)
 
     print(f"Loading dataset from {args.d} (type={args.type})")
-    X = load_dataset(args.d, args.type)  # Done in data_reader.py
-    n, d = X.shape
+    dataset = load_dataset(args.d, args.type)  # Done in data_reader.py
+    n, d = dataset.shape
     print(f"Loaded {n} points of dimension {d}")
 
     print(f"Building k-NN graph with k={args.knn}")
-    neighbors = build_knn_graph(X, k=args.knn)
+    neighbors = build_knn_graph(dataset, k=args.knn)
 
     print("Building weighted edges")
     edge_dict = build_weighted_edges(neighbors)
@@ -26,7 +26,7 @@ def main():
     print("KaHIP done.")
 
     print("Training MLP classifier")
-    model = train_mlp(X, labels,
+    model = train_mlp(dataset, labels,
                       m=args.m,
                       layers=args.layers,
                       nodes=args.nodes,
@@ -50,7 +50,7 @@ def main():
     with open(index_path, "wb") as f:
         pickle.dump(
             {
-                "points": X.astype(np.float32),
+                "points": dataset.astype(np.float32),
                 "labels": labels,
                 "inv_lists": inv_lists,
                 "m": args.m,
