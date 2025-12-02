@@ -1,55 +1,31 @@
-# Makefile for ANN project (C++17)
-# - uses CXX (g++)
-# - sources: src/*.cpp
-# - headers: include/*.h
-# - output: bin/search
-# - supports: make, make run ARGS="...", make debug, make clean
+# Minimal Makefile: compile Python files from src/ into build/
 
-CXX         := g++
-BUILD_DIR   := bin
-OBJ_DIR     := build
+PYTHON    ?= python3
+SRC_DIR   := src
+BUILD_DIR := build
 
-# Default optimisation flags; overridden by "make debug"
-CXXFLAGS    := -O2 -std=c++17 -Wall -Wextra -Iinclude -pthread -MMD -MP
-LDFLAGS     :=
+SOURCES := $(wildcard $(SRC_DIR)/*.py)
+PYCS    := $(patsubst $(SRC_DIR)/%.py,$(BUILD_DIR)/%.pyc,$(SOURCES))
 
-SRC         := $(wildcard src/*.cpp)
-OBJ         := $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
-DEPS        := $(OBJ:.o=.d)
+.PHONY: all compile clean
 
-TARGET      := $(BUILD_DIR)/search
+all: compile
 
-.PHONY: all run debug clean distclean fmt help
+compile: $(PYCS)
+	@echo "All Python files compiled into $(BUILD_DIR)/"
 
-all: $(TARGET)
+# Compile rule: convert src/file.py → build/file.pyc
+$(BUILD_DIR)/%.pyc: $(SRC_DIR)/%.py | $(BUILD_DIR)
+	@echo "Compiling $< → $@"
+	$(PYTHON) -m py_compile $<
+	@# Move auto-generated pyc file from __pycache__ to build/
+	@pyc_file=$$(basename $< .py); \
+	mv $(SRC_DIR)/__pycache__/$$pyc_file.*.pyc $@
 
-# Link
-$(TARGET): $(OBJ) | $(BUILD_DIR)
-	@echo "[LD] $@"
-	$(CXX) $(CXXFLAGS) $(OBJ) -o $(TARGET) $(LDFLAGS)
-
-# Compile (object files under build/)
-$(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
-	@echo "[CXX] $<"
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# ensure dirs
+# Create build folder if not present
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-$(OBJ_DIR):
-	@mkdir -p $(OBJ_DIR)
-
-# run target: pass ARGS on command line, e.g. make run ARGS=" -d data/mnist -q data/queries -k 4"
-run: $(TARGET)
-	@echo "[RUN] $(TARGET) $(ARGS)"
-	./$(TARGET) $(ARGS)
-
-# clean up objects, deps and binary
 clean:
-	@echo "[CLEAN] removing build/ and $(TARGET)"
-	@rm -rf $(OBJ_DIR) $(DEPS) $(TARGET)
-
-
-# include dependency files if present
--include $(DEPS)
+	@echo "Removing build directory..."
+	rm -rf $(BUILD_DIR) $(SRC_DIR)/__pycache__

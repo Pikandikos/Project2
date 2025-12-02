@@ -7,7 +7,7 @@ from sklearn.neighbors import NearestNeighbors
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
-from kahipwrapper import kaHIP as kahip
+import kahip
 
 
 # ---------- Simple MLP (later parameterize layers/nodes) ----------
@@ -112,12 +112,20 @@ def edges_to_csr(n: int, edge_dict):
 
 # ---------- Step 4: run KaHIP ----------
 def run_kahip(xadj, adjncy, adjcwgt, vwgt, m: int, imbalance: float, mode: int, seed: int):
-    n=len(xadj)-1 # number of vertices
+    suppress_output = 1  # 1 = no KaHIP console spam
     edgecut, blocks = kahip.kaffpa(
-        vwgt, xadj, adjcwgt, adjncy, m, imbalance,
-        True,      # suppress_output
-        seed,mode)
+        vwgt,        # list of node weights or None
+        xadj,        # CSR row offsets
+        adjcwgt,     # edge weights
+        adjncy,      # CSR column indices
+        m,           # number of blocks
+        imbalance,   # imbalance, e.g. 0.03
+        suppress_output,
+        seed,
+        mode         # 0=FAST,1=ECO,2=STRONG,...
+    )
     return np.array(blocks, dtype=np.int32)
+
 
 
 # ---------- Step 5: train MLP ----------
