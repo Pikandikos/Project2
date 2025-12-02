@@ -107,11 +107,15 @@ def load_dataset(path: str, dtype: str) -> np.ndarray:
     Returns:
       X: np.ndarray of shape (n, d), float32
     """
-    dtype = dtype.lower()
     if dtype == "mnist":
-        return read_mnist_im(path)
+        X = read_mnist_im(path)
     elif dtype == "sift":
-        return read_sift(path)
+        X = read_sift(path)
     else:
-        raise ValueError(f"Unknown dtype '{dtype}', expected 'mnist' or 'sift'")
-
+        raise ValueError(f"Unknown dtype '{dtype}'")
+    
+    max_points = 5000
+    print(f"Limiting dataset to {max_points} points (from {X.shape[0]})")
+    X = X[:max_points]
+    
+    return X

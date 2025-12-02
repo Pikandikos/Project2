@@ -7,6 +7,8 @@ def main():
 
     print(f"Loading dataset from {args.d} (type={args.type})")
     dataset = load_dataset(args.d, args.type)  # Done in data_reader.py
+    #
+    dataset = dataset[:5000]
     n, d = dataset.shape
     print(f"Loaded {n} points of dimension {d}")
 

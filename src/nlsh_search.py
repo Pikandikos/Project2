@@ -39,7 +39,7 @@ def parse_args():
     if args.batch_size <= 0:
         parser.error(f" batch_size must be positive, got {args.batch_size}")
 
-    return parser.parse_args()
+    return args
 
 # Euclidean distances between query and candidates.
 def compute_distances(query, candidates):
@@ -89,7 +89,7 @@ def search_single_query(query, model, dataset, inv_lists, T=5, N=1, R=None):
     N_actual = min(N, len(candidate_distances))
     nearest_idx = np.argsort(candidate_distances)[:N_actual]
     nearest_indices = [candidate_indices[i] for i in nearest_idx]
-    nearest_distances = candidate_distances[nearest_idx]
+    nearest_candidate_dist = candidate_distances[nearest_idx]
     
     # Get points within range
     id_in_range = []
@@ -124,7 +124,8 @@ def main():
     index_path = args.i + "_index.pkl"
     
     print(f"Loading model from {model_path}")
-    model = torch.load(model_path)
+
+    model = torch.load(model_path, weights_only=False)
     
     print(f"Loading index from {index_path}")
     with open(index_path, "rb") as f:
@@ -190,10 +191,9 @@ def main():
         
         # Compute recall
         recall = 0
-        if true_nearest_indices and approx_nearest_indices:
-            true_set = set(true_nearest_indices[:args.N])
-            approx_set = set(approx_nearest_indices[:args.N])
-            recall = len(true_set.intersection(approx_set)) / args.N
+        true_set = set(true_nearest_indices[:args.N])
+        approx_set = set(approx_nearest_indices[:args.N])
+        recall = len(true_set.intersection(approx_set)) / args.N
         
         total_recall += recall
         total_approx_time += approx_time
