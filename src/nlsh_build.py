@@ -11,32 +11,7 @@ import kahip
 
 from data_reader import *
 
-
-# ---------- MLP ----------
-class MLPClassifier(nn.Module):
-    def __init__(self, d_in: int, m_out: int, hidden_nodes: int, num_layers: int):
-        super().__init__()
-        """
-        d_in = dimensions input
-        m_out = number of partitions
-        hidden_nodes = width of each hidden layer 
-        num_layers = No. of layers (hidden + output)
-        super().init() = initializes the parent class (nn.Module).
-        """
-        layers = []
-        in_dim = d_in
-        for _ in range(num_layers - 1):      # hidden layers
-            layers.append(nn.Linear(in_dim, hidden_nodes))
-            layers.append(nn.ReLU())
-            in_dim = hidden_nodes
-        # final layer to m_out logits
-        layers.append(nn.Linear(in_dim, m_out))
-
-        self.net = nn.Sequential(*layers)
-
-    def forward(self, x):
-        return self.net(x)
-    
+from model import MLPClassifier
 
 # ---------- Step 1: build k-NN graph ----------
 def build_knn_graph(dataset: np.ndarray, k: int):
