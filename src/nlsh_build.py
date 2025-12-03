@@ -7,7 +7,6 @@ from sklearn.neighbors import NearestNeighbors
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
-import time
 import kahip
 
 from data_reader import *
@@ -238,7 +237,7 @@ def main():
     index_path = args.i + "_index.pkl"
 
     print(f"Saving model to {model_path}")
-    torch.save(model, model_path)
+    torch.save(model.state_dict(), model_path)
 
     print(f"Saving index to {index_path}")
     with open(index_path, "wb") as f:
