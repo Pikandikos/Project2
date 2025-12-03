@@ -9,6 +9,15 @@ import time
 import heapq
 from data_reader import load_dataset
 
+# Import MLPClassifier from build.py
+import sys
+import os
+
+# Add the parent directory to Python path to import from build.py
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from nlsh_build import MLPClassifier  # Now you can import it
+
+
 # Get arguments from command line and pass them to variables
 def parse_args():
     parser = argparse.ArgumentParser(description="Neural LSH search")
