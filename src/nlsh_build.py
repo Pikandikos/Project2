@@ -12,7 +12,7 @@ import kahip
 from data_reader import *
 
 
-# ---------- Simple MLP (later parameterize layers/nodes) ----------
+# ---------- MLP ----------
 class MLPClassifier(nn.Module):
     def __init__(self, d_in: int, m_out: int, hidden_nodes: int, num_layers: int):
         super().__init__()
