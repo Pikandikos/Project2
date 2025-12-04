@@ -87,5 +87,9 @@ def load_dataset(path: str, datatype: str) -> np.ndarray:
     # max_points = 5000
     # print(f"Limiting dataset to {max_points} points (from {X.shape[0]})")
     # X = X[:max_points]
+    # just for testing..
+    #max_points = 5000
+    #print(f"Limiting dataset to {max_points} points (from {X.shape[0]})")
+    #X = X[:max_points]
     
     return X
