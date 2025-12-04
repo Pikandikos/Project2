@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-class MLPClassifier(nn.Module):
+class MLP(nn.Module):
     def __init__(self, d_in: int, m_out: int, hidden_nodes: int, num_layers: int):
         super().__init__()
         layers = []

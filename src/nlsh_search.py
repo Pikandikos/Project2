@@ -9,7 +9,7 @@ import time
 import heapq
 from data_reader import load_dataset
 
-from model import MLPClassifier
+from model import MLP
 
 
 # Get arguments from command line and pass them to variables
