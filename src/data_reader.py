@@ -23,6 +23,7 @@ def parse_args():
 
     return parser.parse_args()
 
+# With the help of ai
 # MNIST
 def read_mnist_im(path: str) -> np.ndarray:
 
@@ -84,9 +85,7 @@ def load_dataset(path: str, datatype: str) -> np.ndarray:
     else:
         raise ValueError(f"Unknown dtype '{datatype}'")
     
-    # max_points = 5000
-    # print(f"Limiting dataset to {max_points} points (from {X.shape[0]})")
-    # X = X[:max_points]
+
     # just for testing..
     #max_points = 5000
     #print(f"Limiting dataset to {max_points} points (from {X.shape[0]})")
