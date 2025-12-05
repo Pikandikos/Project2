@@ -165,7 +165,7 @@ def main():
     dataset = load_dataset(args.d, args.type)
 
     # just for testng
-    #dataset = dataset[:5000]
+    # dataset = dataset[:50000]
     n, d = dataset.shape
     print(f"Loaded {n} points of dimension {d}")
 
